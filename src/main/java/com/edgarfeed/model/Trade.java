@@ -30,11 +30,11 @@ public class Trade {
     private String insiderRole;
     private LocalDate transactionDate;
     private Character transactionCode;
-    private BigInteger shares;
+    private Long shares;
     private BigDecimal price;
     private BigDecimal value;
     private Character ownershipType;
-    private BigInteger sharesAfter;
+    private Long sharesAfter;
     private OffsetDateTime createdAt;
 
 }
