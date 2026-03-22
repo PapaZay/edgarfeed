@@ -18,6 +18,10 @@ public class TradeService {
         this.tradeRepository = tradeRepository;
     }
 
+    public Trade saveTrade(Trade trade){
+        return tradeRepository.save(trade);
+    }
+
     public Page<Trade> getAllTrades(Pageable pageable){
         return tradeRepository.findAll(pageable);
     }
