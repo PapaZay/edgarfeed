@@ -6,10 +6,16 @@ from tickers import SP500_TICKERS
 SPRING_BOOT_URL = "http://localhost:8080/internal/ingest"
 
 def handler(event, context):
-    pass
-# TODO: Implement process ticker function
+    set_identity("edgar-feed@gmail.com")
+    for ticker in SP500_TICKERS:
+        process_ticker(ticker)
+
 def process_ticker(ticker):
-    pass
+    trades = fetch_trades(ticker)
+    if not trades:
+        return
+    prices = fetch_prices(ticker)
+    post_to_springboot(trades, prices)
     
 def fetch_prices(ticker):
     data = yf.Ticker(ticker)   
@@ -42,22 +48,25 @@ def fetch_trades(ticker):
         for tx in transactions:
             trades.append({
                 "accessionNo": filing.accession_no,
-                "filing_date": str(filing.filing_date),
+                "filedDate": str(filing.filing_date),
                 "ticker": ticker,
                 "issuerName": form4.issuer.name,
                 "insiderName": owner.name,
                 "insiderRole": owner.position,
                 "transactionDate": str(tx.date),
                 "transactionCode": tx.transaction_code,
-                "shares": int(tx.shares),
-                "price": float(tx.price),
+                "shares": int(tx.shares) if tx.shares else None,
+                "price": float(tx.price) if tx.price else None,
                 "ownershipType": tx.direct_indirect,
                 "sharesAfter": int(tx.remaining)
             })
     return trades 
+
+def post_to_springboot(trades, prices):
+    payload = {"trades": trades, "prices": prices}
+    response = requests.post(SPRING_BOOT_URL, json=payload)
+    return response.status_code
        
-# for testing purposes
-set_identity("edgar-feed@gmail.com")
-print(fetch_trades("SNOW"))
+
         
     
