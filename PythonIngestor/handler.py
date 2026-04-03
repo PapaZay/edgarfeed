@@ -74,4 +74,5 @@ def post_to_springboot(trades, prices):
        
 
         
-    
+set_identity("edgar-feed@gmail.com")
+process_ticker("AAPL")
