@@ -19,7 +19,7 @@ def process_ticker(ticker):
         prices = fetch_prices(ticker)
         post_to_springboot(trades, prices)
     except Exception as e:
-        traceback.print_exc()
+        print(f"Error processing {ticker}: {e}")
     
 def fetch_prices(ticker):
     data = yf.Ticker(ticker)   
@@ -52,7 +52,7 @@ def fetch_trades(ticker):
         for tx in transactions:
             if tx is None:
                 continue
-            print(f"tx.date: {tx.date}, tx.transaction_code: {tx.transaction_code}")
+            # print(f"tx.date: {tx.date}, tx.transaction_code: {tx.transaction_code}")
             if not tx.date:
                 continue
             trades.append({
@@ -78,7 +78,3 @@ def post_to_springboot(trades, prices):
         print(f"Failed to post to Spring Boot: {response.status_code} {response.text}")
     return response.status_code
        
-
-        
-set_identity("edgar-feed@gmail.com")
-process_ticker("AAPL")
