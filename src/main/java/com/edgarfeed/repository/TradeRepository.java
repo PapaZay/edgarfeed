@@ -9,4 +9,5 @@ public interface TradeRepository extends JpaRepository<Trade, Integer> {
     List<Trade> findByTicker(String ticker);
     List<Trade> findByTransactionCode(Character code);
     List<Trade> findByInsiderName(String insiderName);
+    boolean existsByAccessionNo(String accessionNo);
 }

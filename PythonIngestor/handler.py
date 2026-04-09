@@ -2,7 +2,8 @@ import requests
 import yfinance as yf
 from edgar import Company, set_identity
 from tickers import SP500_TICKERS
-
+import traceback
+import math
 SPRING_BOOT_URL = "http://localhost:8080/internal/ingest"
 
 def handler(event, context):
@@ -18,7 +19,7 @@ def process_ticker(ticker):
         prices = fetch_prices(ticker)
         post_to_springboot(trades, prices)
     except Exception as e:
-        print(f"Error processing {ticker}: {e}")
+        traceback.print_exc()
     
 def fetch_prices(ticker):
     data = yf.Ticker(ticker)   
@@ -41,7 +42,7 @@ def fetch_prices(ticker):
 
 def fetch_trades(ticker):
     company = Company(ticker)
-    filings = company.get_filings(form="4").latest(10)
+    filings = company.get_filings(form="4").latest(3)
     
     trades = []
     for filing in filings:
@@ -49,6 +50,11 @@ def fetch_trades(ticker):
         owner = form4.reporting_owners[0]
         transactions = form4.non_derivative_table.transactions
         for tx in transactions:
+            if tx is None:
+                continue
+            print(f"tx.date: {tx.date}, tx.transaction_code: {tx.transaction_code}")
+            if not tx.date:
+                continue
             trades.append({
                 "accessionNo": filing.accession_no,
                 "filedDate": str(filing.filing_date),
@@ -56,10 +62,10 @@ def fetch_trades(ticker):
                 "issuerName": form4.issuer.name,
                 "insiderName": owner.name,
                 "insiderRole": owner.position,
-                "transactionDate": str(tx.date),
+                "transactionDate": str(tx.date) if tx.date else None,
                 "transactionCode": tx.transaction_code,
                 "shares": int(tx.shares) if tx.shares else None,
-                "price": float(tx.price) if tx.price else None,
+                "price": float(tx.price) if tx.price and not math.isnan(float(tx.price)) else None,
                 "ownershipType": tx.direct_indirect,
                 "sharesAfter": int(tx.remaining) if tx.remaining else None
             })

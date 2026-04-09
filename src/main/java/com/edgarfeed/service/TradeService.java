@@ -18,7 +18,10 @@ public class TradeService {
         this.tradeRepository = tradeRepository;
     }
 
-    public Trade saveTrade(Trade trade){
+    public Trade saveTrade(Trade trade) {
+        if (tradeRepository.existsByAccessionNo(trade.getAccessionNo())) {
+            return null;
+        }
         return tradeRepository.save(trade);
     }
 
