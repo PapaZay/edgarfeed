@@ -6,13 +6,13 @@ export interface Trade {
     issuerName: string
     insiderName: string
     insiderRole: string
-    transactionRole: string
+    transactionDate: string
     transactionCode: string
     shares: number
     price: number
     value: number
     ownershipType: string
-    shareAfter: number
+    sharesAfter: number
 }
 
 export interface Price {

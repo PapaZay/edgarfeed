@@ -3,7 +3,7 @@ import type {Trade, Page} from "./types";
 const BASE = '/api'
 
 export async function getTrades(page = 0): Promise<Page<Trade>> {
-    const res = await fetch(`${BASE}/trades?page=${page}&sort-filedDate,desc`)
+    const res = await fetch(`${BASE}/trades?page=${page}&sort=filedDate,desc`)
     return res.json()
 }
 
@@ -12,7 +12,7 @@ export async function getTradesById(id: number): Promise<Trade> {
     return res.json()
 }
 
-export async function getTradesByTicker(ticker: string): Promise<Trade[] {
+export async function getTradesByTicker(ticker: string): Promise<Trade[]> {
     const res = await fetch(`${BASE}/tickers/${ticker}/trades`)
     return res.json()
 }
