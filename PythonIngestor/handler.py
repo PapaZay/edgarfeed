@@ -4,6 +4,7 @@ from edgar import Company, set_identity
 from tickers import SP500_TICKERS
 import traceback
 import math
+
 SPRING_BOOT_URL = "http://localhost:8080/internal/ingest"
 
 def handler(event, context):
