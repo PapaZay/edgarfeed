@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-
 import './App.css'
+import FeedPage from './pages/FeedPage'
 
 function App() {
   return (
