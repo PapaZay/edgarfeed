@@ -59,6 +59,55 @@ export default function TickerPage() {
                     <p className='text-xs text-gray-500 mt-2'>Yellow lines indicate insider transaction dates</p>
                 </div>
             )}
+
+            <h2 className='text-lg font-semibold mb-4'>Insider Trades</h2>
+            <div className='overflow-x-auto rounded-lg border border-gray-800'>
+                <table className='w-full text-xs'>
+                    <thead className='bg-gray-900 text-gray-400 uppercase text-xs'>
+                        <tr>
+                            <th className='px-4 py-3 text-left'>Date</th>
+                            <th className='px-4 py-3 text-left'>Insider</th>
+                            <th className='px-4 py-3 text-left'>Role</th>
+                            <th className='px-4 py-3 text-left'>Type</th>
+                            <th className='px-4 py-3 text-right'>Shares</th>
+                            <th className='px-4 py-3 text-right'>Price</th>
+                            <th className='px-4 py-3 text-right'>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody className='divide-y divide-gray-800'>
+                        {trades.map(trade => (
+                            <tr key={trade.id} className='hover:bg-gray-900 transition-colors'>
+                                <td className='px-4 py-3 text-gray-400'>{trade.transactionDate}</td>
+                                <td className='px-4 py-3'>
+                                    <button
+                                    onClick={() => navigate(`/insider/${encodeURIComponent(trade.insiderName)}`)}
+                                    className='hover:text-blue-300'
+                                    >
+                                        {trade.insiderName}
+                                    </button>
+                                </td>
+                                <td className='px-4 py-3 text-gray-400 text-xs'>{trade.insiderRole}</td>
+                                <td className='px-4 py-3'>
+                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                        trade.transactionCode === 'P' ? 'bg-green-900 text-green-300' :
+                                        trade.transactionCode === 'S' ? 'bg-red-900 text-red-300' :
+                                        'bg-gray-800 text-gray-300'
+                                    }`}>
+                                        {CODE_LABELS[trade.transactionCode] ?? trade.transactionCode}
+                                    </span>
+                                </td>
+                                <td className='px-4 py-3 text-right font-mono'>{trade.shares?.toLocaleString() ?? '-'}</td>
+                                <td className='px-4 py-3 text-right font-mono'>
+                                    {trade.price != null ? `$${Number(trade.price).toFixed(2)}` : '-'}
+                                </td>
+                                <td className='px-4 py-3 text-right font-mono font-semibold'>
+                                    {trade.value != null ? `$${Number(trade.value).toLocaleString()}` : '-'}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     )
 
