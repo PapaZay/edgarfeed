@@ -4,8 +4,9 @@ from edgar import Company, set_identity
 from tickers import SP500_TICKERS
 import traceback
 import math
+import os
 
-SPRING_BOOT_URL = "http://localhost:8080/internal/ingest"
+SPRING_BOOT_URL = os.environ.get("SPRING_BOOT_URL", "http://localhost:8080/internal/ingest") 
 
 def handler(event, context):
     set_identity("edgar-feed@gmail.com")
