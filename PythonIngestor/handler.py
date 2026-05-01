@@ -5,15 +5,18 @@ from tickers import SP500_TICKERS
 import traceback
 import math
 import os
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 
 SPRING_BOOT_URL = os.environ.get("SPRING_BOOT_URL", "http://localhost:8080/internal/ingest") 
 
 def handler(event, context):
+    print("Handler started", flush=True)
     set_identity("edgar-feed@gmail.com")
-    for ticker in SP500_TICKERS:
+    for ticker in SP500_TICKERS[:5]:
         process_ticker(ticker)
 
 def process_ticker(ticker):
+    print(f"Processing {ticker}", flush=True)
     try:
         trades = fetch_trades(ticker)
         if not trades:
@@ -21,7 +24,7 @@ def process_ticker(ticker):
         prices = fetch_prices(ticker)
         post_to_springboot(trades, prices)
     except Exception as e:
-        print(f"Error processing {ticker}: {e}")
+        print(f"Error processing {ticker}: {e}", flush=True)
     
 def fetch_prices(ticker):
     data = yf.Ticker(ticker)   
@@ -44,11 +47,20 @@ def fetch_prices(ticker):
 
 def fetch_trades(ticker):
     company = Company(ticker)
-    filings = company.get_filings(form="4").latest(3)
+    print(f"Got company {ticker}", flush=True)
+    filings = company.get_filings(form="4").latest(1)
+    filings = [filings]
+    print(f"Got filings {ticker}", flush=True)
     
     trades = []
     for filing in filings:
-        form4 = filing.obj()
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(filing.obj)
+            try:
+                form4 = future.result(timeout=30)
+            except FuturesTimeoutError:
+                print(f"Timeout fetching form4 for {ticker}, skipping", flush=True)
+                continue
         owner = form4.reporting_owners[0]
         transactions = form4.non_derivative_table.transactions
         for tx in transactions:
@@ -77,6 +89,6 @@ def post_to_springboot(trades, prices):
     payload = {"trades": trades, "prices": prices}
     response = requests.post(SPRING_BOOT_URL, json=payload)
     if response.status_code != 200:
-        print(f"Failed to post to Spring Boot: {response.status_code} {response.text}")
+        print(f"Failed to post to Spring Boot: {response.status_code} {response.text}", flush=True)
     return response.status_code
        
