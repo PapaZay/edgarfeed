@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface PriceRepository extends JpaRepository<Price, Integer> {
     List<Price> findByTicker(String ticker);
+    boolean existsByTickerAndDate(String ticker, java.time.LocalDate date);
 }

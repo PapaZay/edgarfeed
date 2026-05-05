@@ -18,7 +18,9 @@ public class PriceService {
         return priceRepository.findByTicker(ticker);
     }
 
-    public Price savePrice(Price price){
-        return priceRepository.save(price);
+    public void savePrice(Price price){
+        if (!priceRepository.existsByTickerAndDate(price.getTicker(), price.getDate())){
+            priceRepository.save(price);
+        }
     }
 }
