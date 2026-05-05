@@ -5,15 +5,47 @@ from tickers import SP500_TICKERS
 import traceback
 import math
 import os
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+import time
+from multiprocessing import Process, Queue
 
 SPRING_BOOT_URL = os.environ.get("SPRING_BOOT_URL", "http://localhost:8080/internal/ingest") 
+
+def safe_get_form4(filing, ticker):
+    def worker(q):
+        try:
+            q.put(filing.obj())
+        except Exception as e:
+            q.put(e)
+
+    q = Queue()
+    p = Process(target=worker, args=(q,))
+    p.daemon = True
+    p.start()
+    p.join(15)
+
+    if p.is_alive():
+        p.terminate()
+        p.join()
+        print(f"[TIMEOUT] filing.obj() for {ticker}", flush=True)
+        return None
+
+    if not q.empty():
+        result = q.get()
+    else:
+        return None
+
+    if isinstance(result, Exception):
+        print(f"[ERROR] filing.obj() for {ticker}: {result}", flush=True)
+        return None
+
+    return result
 
 def handler(event, context):
     print("Handler started", flush=True)
     set_identity("edgar-feed@gmail.com")
-    for ticker in SP500_TICKERS[:5]:
+    for ticker in SP500_TICKERS[2:7]:
         process_ticker(ticker)
+        time.sleep(5)
 
 def process_ticker(ticker):
     print(f"Processing {ticker}", flush=True)
@@ -48,19 +80,31 @@ def fetch_prices(ticker):
 def fetch_trades(ticker):
     company = Company(ticker)
     print(f"Got company {ticker}", flush=True)
-    filings = company.get_filings(form="4").latest(1)
+    try:
+        filings = company.get_filings(form="4").latest(1)
+    except Exception as e:
+        print(f"Failed to fetch filings for {ticker}: {e}", flush=True)
+        return []
+    if not filings:
+        return []
     filings = [filings]
     print(f"Got filings {ticker}", flush=True)
     
     trades = []
     for filing in filings:
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(filing.obj)
-            try:
-                form4 = future.result(timeout=30)
-            except FuturesTimeoutError:
-                print(f"Timeout fetching form4 for {ticker}, skipping", flush=True)
+        try:
+            start = time.time()
+            print("BEFORE filing.obj", flush=True)
+            form4 = safe_get_form4(filing, ticker)
+            print("AFTER filing.obj", flush=True)
+            print(f"{ticker} form4 took {time.time() - start:.2f}s", flush=True)
+            if not form4:
                 continue
+        except TimeoutError:
+            print(f"Timeout fetching form4 for {ticker}, skipping", flush=True)
+            continue
+        if not form4.reporting_owners:
+            continue
         owner = form4.reporting_owners[0]
         transactions = form4.non_derivative_table.transactions
         for tx in transactions:
