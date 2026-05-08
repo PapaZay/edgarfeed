@@ -2,11 +2,9 @@ import requests
 import yfinance as yf
 from edgar import Company, set_identity
 from tickers import SP500_TICKERS
-import traceback
 import math
 import os
 import time
-from multiprocessing import Process, Queue
 import xml.etree.ElementTree as ET
 
 SPRING_BOOT_URL = os.environ.get("SPRING_BOOT_URL", "http://localhost:8080/internal/ingest") 
@@ -15,36 +13,6 @@ SPRING_BOOT_URL = os.environ.get("SPRING_BOOT_URL", "http://localhost:8080/inter
 def _xml_text(el,path):
     node = el.find(path)
     return node.text.strip() if node is not None and node.text else None
-
-def safe_get_form4(filing, ticker):
-    def worker(q):
-        try:
-            q.put(filing.obj())
-        except Exception as e:
-            q.put(e)
-
-    q = Queue()
-    p = Process(target=worker, args=(q,))
-    p.daemon = True
-    p.start()
-    p.join(15)
-
-    if p.is_alive():
-        p.terminate()
-        p.join()
-        print(f"[TIMEOUT] filing.obj() for {ticker}", flush=True)
-        return None
-
-    if not q.empty():
-        result = q.get()
-    else:
-        return None
-
-    if isinstance(result, Exception):
-        print(f"[ERROR] filing.obj() for {ticker}: {result}", flush=True)
-        return None
-
-    return result
 
 def handler(event, context):
     print("Handler started", flush=True)
@@ -87,60 +55,7 @@ def fetch_prices(ticker):
             
         })
     return prices
-
-
-# def fetch_trades(ticker):
-#     company = Company(ticker)
-#     print(f"Got company {ticker}", flush=True)
-#     try:
-#         filings = company.get_filings(form="4").latest(1)
-#     except Exception as e:
-#         print(f"Failed to fetch filings for {ticker}: {e}", flush=True)
-#         return []
-#     if not filings:
-#         return []
-#     filings = [filings]
-#     print(f"Got filings {ticker}", flush=True)
-    
-#     trades = []
-#     for filing in filings:
-#         try:
-#             start = time.time()
-#             print("BEFORE filing.obj", flush=True)
-#             form4 = safe_get_form4(filing, ticker)
-#             print("AFTER filing.obj", flush=True)
-#             print(f"{ticker} form4 took {time.time() - start:.2f}s", flush=True)
-#             if not form4:
-#                 continue
-#         except TimeoutError:
-#             print(f"Timeout fetching form4 for {ticker}, skipping", flush=True)
-#             continue
-#         if not form4.reporting_owners:
-#             continue
-#         owner = form4.reporting_owners[0]
-#         transactions = form4.non_derivative_table.transactions
-#         for tx in transactions:
-#             if tx is None:
-#                 continue
-#             # print(f"tx.date: {tx.date}, tx.transaction_code: {tx.transaction_code}")
-#             if not tx.date:
-#                 continue
-#             trades.append({
-#                 "accessionNo": filing.accession_no,
-#                 "filedDate": str(filing.filing_date),
-#                 "ticker": ticker,
-#                 "issuerName": form4.issuer.name,
-#                 "insiderName": owner.name,
-#                 "insiderRole": owner.position,
-#                 "transactionDate": str(tx.date) if tx.date else None,
-#                 "transactionCode": tx.transaction_code,
-#                 "shares": int(tx.shares) if tx.shares else None,
-#                 "price": float(tx.price) if tx.price and not math.isnan(float(tx.price)) else None,
-#                 "ownershipType": tx.direct_indirect,
-#                 "sharesAfter": int(tx.remaining) if tx.remaining else None
-#             })
-#     return trades 
-
+ 
 def fetch_trades(ticker):                                                                                                                                                 
     company = Company(ticker)                                                                                                                                             
     print(f"Got company {ticker}", flush=True)                                                                                                                            
@@ -217,6 +132,7 @@ def fetch_trades(ticker):
             "transactionCode": _xml_text(tx, "transactionCoding/transactionCode"),
             "shares": shares,                                                                                                                                             
             "price": price,
+            "value": round(shares * price, 2) if shares and price else None,
             "ownershipType": _xml_text(tx, "ownershipNature/directOrIndirectOwnership/value"),
             "sharesAfter": shares_after                                                                                                                                   
           })
