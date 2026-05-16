@@ -23,8 +23,8 @@ export default function TradeDetailPage(){
     if (!trade) return <p className='p-8 text-gray-500'>Loading...</p>
 
     return (
-        <div className='min-h-screen bg-gray-950 text-gray-100 p-8 max-w-2xl mx-auto'>
-            <button onClick={() => navigate(-1)} className='text-sm text-gray-400 hover:text-gray-200 mg-6 inline-block'>
+        <div className='min-h-screen bg-gray-950 text-gray-100 p-8'>
+            <button onClick={() => navigate(-1)} className='text-sm text-gray-400 hover:text-gray-200 mb-6 inline-block'>
                 ← Back
             </button>
 

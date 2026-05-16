@@ -42,18 +42,18 @@ export default function FeedPage(){
                 </thead>
                 <tbody className='divide-y divide-gray-800'>
                     {data.content.map(trade => (
-                        <tr key={trade.id} className='hover:bg-gray-900'>
+                        <tr key={trade.id} onClick={() => navigate(`/trade/${trade.id}`)} className='hover:bg-gray-900 cursor-pointer'>
                             <td className='px-4 py-3 text-gray-400'>{trade.filedDate}</td>
                             <td className='px-4 py-3'>
                                 <button
-                                onClick={() => navigate(`/ticker/${trade.ticker}`)}
+                                onClick={(e) => { e.stopPropagation(); navigate(`/ticker/${trade.ticker}`)}}
                                 className='font-mono font-semibold text-blue-400 hover:text-blue-300'>
                                     {trade.ticker}
                                 </button>
                             </td>
                             <td className='px-4 py-3'>
                                 <button 
-                                onClick={() => navigate(`/insider/${encodeURIComponent(trade.insiderName)}`)}
+                                onClick={(e) => { e.stopPropagation(); navigate(`/insider/${encodeURIComponent(trade.insiderName)}`)}}
                                 className='hover:text-blue-300'>
                                     {trade.insiderName}
                                 </button>
